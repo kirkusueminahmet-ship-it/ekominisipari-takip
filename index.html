@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>EKOMİNİ Sipariş Takip</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f1a;--bg2:#1a1a2e;--bg3:#16213e;--bgin:#0f1729;--acc:#e2a84b;--acch:#f0bc6a;--accd:rgba(226,168,75,.15);--t1:#e8e8f0;--t2:#8888a8;--t3:#555570;--ok:#4ade80;--okd:rgba(74,222,128,.12);--no:#f87171;--nod:rgba(248,113,113,.12);--warn:#fbbf24;--warnd:rgba(251,191,36,.12);--info:#60a5fa;--infod:rgba(96,165,250,.12);--brd:rgba(255,255,255,.06);--brda:rgba(226,168,75,.3);--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+input,select,button,textarea{font-family:inherit}
+
+.nav{background:var(--bg2);border-bottom:1px solid var(--brd);padding:0 16px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.nav-in{max-width:600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:54px}
+.nav-brand{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:800;color:var(--acc);cursor:pointer}
+.nav-brand i{color:var(--t1);font-style:normal}
+.nav-r{display:flex;align-items:center;gap:6px}
+.rtag{font-size:.62rem;padding:3px 8px;border-radius:20px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.rtag.owner{background:var(--accd);color:var(--acc)}
+.rtag.customer{background:var(--infod);color:var(--info)}
+
+.main{max-width:600px;margin:0 auto;padding:14px 12px 100px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:var(--rs);font-size:.84rem;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-p{background:var(--acc);color:#0f0f1a}.btn-p:hover{background:var(--acch)}
+.btn-s{background:var(--bg3);color:var(--t1);border:1px solid var(--brd)}
+.btn-ok{background:var(--okd);color:var(--ok)}
+.btn-no{background:var(--nod);color:var(--no)}
+.btn-sm{padding:6px 12px;font-size:.76rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-full{width:100%}
+
+.card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.card-t{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:10px}
+
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:.7rem;font-weight:600;color:var(--t2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fi{width:100%;padding:10px 12px;background:var(--bgin);border:1px solid var(--brd);border-radius:var(--rs);color:var(--t1);font-size:.88rem}
+.fi:focus{outline:none;border-color:var(--acc)}.fi::placeholder{color:var(--t3)}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:12px}
+.stat-l{font-size:.66rem;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.stat-v{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700}
+.stat-v.pos{color:var(--ok)}.stat-v.neg{color:var(--no)}.stat-v.neu{color:var(--acc)}
+
+.tabs{display:flex;gap:2px;background:var(--bg2);border-radius:var(--rs);padding:3px;margin-bottom:12px;overflow-x:auto}
+.tab{flex:1;padding:7px 8px;border:none;border-radius:6px;background:transparent;color:var(--t3);font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.tab.on{background:var(--bg3);color:var(--t1)}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.b-pend{background:var(--warnd);color:var(--warn)}
+.b-ok{background:var(--okd);color:var(--ok)}
+.b-del{background:var(--infod);color:var(--info)}
+.b-can{background:var(--nod);color:var(--no)}
+.b-edit{background:var(--warnd);color:var(--warn);margin-left:4px}
+
+.orow{padding:12px;border-bottom:1px solid var(--brd);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .1s}
+.orow:active{background:rgba(255,255,255,.03)}.orow:last-child{border-bottom:none}
+.orow-l{flex:1;min-width:0}.orow-date{font-weight:600;font-size:.86rem}
+.orow-sub{font-size:.7rem;color:var(--t3);margin-top:2px}
+.orow-r{text-align:right;flex-shrink:0}.orow-amt{font-weight:700;font-size:.86rem}
+
+.prow{display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--bgin);border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:5px;transition:border-color .15s}
+.prow.on{border-color:var(--acc);background:var(--accd)}
+.prow-n{flex:1;font-size:.8rem;font-weight:500}
+.prow-p{font-size:.7rem;color:var(--t3);min-width:48px;text-align:right}
+.prow-q{width:52px;padding:6px;background:var(--bg2);border:1px solid var(--brd);border-radius:6px;color:var(--t1);font-size:.82rem;text-align:center}
+.prow-q:focus{border-color:var(--acc);outline:none}
+
+.cat{font-size:.66rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 5px}
+
+.summ{background:var(--bg2);border:1px solid var(--brda);border-radius:var(--r);padding:12px;margin-top:10px}
+.srow{display:flex;justify-content:space-between;padding:3px 0;font-size:.84rem}
+.srow.tot{border-top:1px solid var(--brd);margin-top:6px;padding-top:8px;font-weight:700;font-size:1rem}
+.srow.tot .amt{color:var(--acc);font-family:'Playfair Display',serif}
+
+.ebanner{background:var(--warnd);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.eb-t{font-weight:700;color:var(--warn);margin-bottom:4px;font-size:.86rem}
+.eb-acts{display:flex;gap:8px;margin-top:10px}
+
+.ditems{width:100%}.ditems td,.ditems th{padding:5px 6px;font-size:.78rem;text-align:left}
+.ditems th{color:var(--t3);font-size:.66rem;text-transform:uppercase;border-bottom:1px solid var(--brd)}
+.ditems td{border-bottom:1px solid var(--brd)}.ditems tr:last-child td{border:none}
+
+.ptable{width:100%}.ptable td,.ptable th{padding:7px 6px;font-size:.78rem;text-align:left}
+.ptable th{color:var(--t3);font-size:.66rem;text-transform:uppercase;border-bottom:1px solid var(--brd)}
+.ptable td{border-bottom:1px solid var(--brd)}
+
+.empty{text-align:center;padding:36px 16px;color:var(--t3)}.empty-i{font-size:2rem;margin-bottom:8px}
+
+.role-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.role-box{width:100%;max-width:380px;text-align:center}
+.role-t{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:800;margin-bottom:4px}
+.role-t span{color:var(--acc)}
+.role-s{color:var(--t2);font-size:.85rem;margin-bottom:32px}
+.role-btn{width:100%;padding:20px;margin-bottom:12px;border-radius:var(--r);border:2px solid var(--brd);background:var(--bg3);color:var(--t1);cursor:pointer;transition:all .2s;text-align:center}
+.role-btn:hover,.role-btn:active{border-color:var(--acc);background:var(--accd)}
+.role-btn-t{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:4px}
+.role-btn-s{font-size:.78rem;color:var(--t2)}
+.role-btn-icon{font-size:2rem;margin-bottom:8px}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:var(--rs);font-size:.84rem;font-weight:600;z-index:9999;animation:tin .3s ease;max-width:90vw;text-align:center}
+.toast-ok{background:#065f46;color:var(--ok);border:1px solid rgba(74,222,128,.3)}
+.toast-err{background:#7f1d1d;color:var(--no);border:1px solid rgba(248,113,113,.3)}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeIn .25s ease}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sec-t{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700}
+.fw7{font-weight:700}.tmut{color:var(--t3)}.t2{color:var(--t2)}.txs{font-size:.7rem}.tsm{font-size:.78rem}
+.mt-2{margin-top:8px}.mb-2{margin-bottom:8px}
+details summary{cursor:pointer;color:var(--warn);font-size:.78rem}
+</style>
+</head>
+<body>
+<div id="app"><div class="role-wrap"><div style="color:var(--t3)">Yükleniyor...</div></div></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,query,orderBy,onSnapshot,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app=initializeApp({
+  apiKey:"AIzaSyDXxHoaIePtUMjmUnBOiw3d8w74xZKF7A8",
+  authDomain:"ekomini-siparis-takip.firebaseapp.com",
+  projectId:"ekomini-siparis-takip",
+  storageBucket:"ekomini-siparis-takip.firebasestorage.app",
+  messagingSenderId:"954279647157",
+  appId:"1:954279647157:web:ed6c4f4942521828e22bfc"
+});
+const db=getFirestore(app);
+
+/* ─── ÜRÜNLER ─── */
+const P=[
+{id:'sutlu-simit',n:'Sütlü Simit',p:20,c:'Simit'},
+{id:'citir-simit',n:'Çıtır Simit',p:15,c:'Simit'},
+{id:'uzun-acma',n:'Uzun Açma Çeşitleri',p:30,c:'Açma'},
+{id:'acma-sade',n:'Açma Sade',p:20,c:'Açma'},
+{id:'acma-cikolatali',n:'Açma Çikolatalı',p:25,c:'Açma'},
+{id:'acma-cevizli',n:'Açma Cevizli',p:20,c:'Açma'},
+{id:'acma-zeytinli',n:'Açma Zeytinli',p:25,c:'Açma'},
+{id:'karakoy-peynirli',n:'Karaköy Peynirli',p:25,c:'Karaköy'},
+{id:'karakoy-patatesli',n:'Karaköy Patatesli',p:25,c:'Karaköy'},
+{id:'karakoy-kasarli',n:'Karaköy Kaşarlı',p:25,c:'Karaköy'},
+{id:'karakoy-cikolatali',n:'Karaköy Çikolatalı',p:25,c:'Karaköy'},
+{id:'karakoy-zeytinli',n:'Karaköy Zeytinli',p:25,c:'Karaköy'},
+{id:'karakoy-sosisli',n:'Karaköy Sosisli',p:25,c:'Karaköy'},
+{id:'pizza',n:'Pizza',p:50,c:'Diğer'},
+{id:'dereotlu-puaca',n:'Dereotlu Poaça',p:12.50,c:'Poğaça'},
+{id:'boyoz',n:'Boyoz',p:25,c:'Boyoz'},
+{id:'domatesli-kasarli-boyoz',n:'Domatesli Kaşarlı Boyoz',p:35,c:'Boyoz'},
+{id:'tahinli-boyoz',n:'Tahinli Boyoz',p:30,c:'Boyoz'},
+{id:'catal-peynirli',n:'Çatal Peynirli',p:90,c:'Çatal'},
+{id:'catal-kiymali',n:'Çatal Kıymalı',p:100,c:'Çatal'},
+{id:'catal-patatesli',n:'Çatal Patatesli',p:90,c:'Çatal'},
+{id:'tahinli',n:'Tahinli',p:50,c:'Diğer'},
+{id:'kurabiye',n:'Kurabiye',p:25,c:'Diğer'},
+];
+const CATS=[...new Set(P.map(x=>x.c))];
+
+/* ─── STATE ─── */
+let S={page:'role',role:null,orders:[],payments:[],tab:'all',qty:{},ddate:'',note:'',oid:null,odata:null,editing:false,eqty:{},edate:'',pa:'',pd:'',pn:''};
+let unsubs=[];
+
+/* ─── UTILS ─── */
+function tdy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtD(s){if(!s)return'';const m=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];const d=new Date(s+'T00:00:00');return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()}
+function fmtDL(s){if(!s)return'';const m=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];const w=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];const d=new Date(s+'T00:00:00');return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+', '+w[d.getDay()]}
+function money(n){return '\u20BA'+(n||0).toLocaleString('tr-TR',{minimumFractionDigits:2})}
+function toast(msg,ok){const el=document.createElement('div');el.className='toast '+(ok!==false?'toast-ok':'toast-err');el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove()},2500)}
+function h(tag,cls,html){const el=document.createElement(tag);if(cls)el.className=cls;if(html)el.innerHTML=html;return el}
+function disc28(sub){return Math.round(sub*28)/100}
+
+/* ─── ROLE ─── */
+function pickRole(r){S.role=r;localStorage.setItem('eko-role',r);S.page='dashboard';startListeners();render()}
+function switchRole(){localStorage.removeItem('eko-role');S.role=null;S.page='role';unsubs.forEach(function(fn){fn()});unsubs=[];render()}
+
+/* ─── LISTENERS ─── */
+function startListeners(){
+  unsubs.forEach(function(fn){fn()});unsubs=[];
+  var q1=query(collection(db,'orders'),orderBy('deliveryDate','desc'));
+  unsubs.push(onSnapshot(q1,function(snap){
+    S.orders=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+    if(S.oid)S.odata=S.orders.find(function(o){return o.id===S.oid})||null;
+    render();
+  }));
+  var q2=query(collection(db,'payments'),orderBy('date','desc'));
+  unsubs.push(onSnapshot(q2,function(snap){
+    S.payments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+    render();
+  }));
+}
+
+/* ─── ACTIONS ─── */
+async function createOrder(){
+  var items=P.filter(function(p){return(S.qty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.qty[p.id],price:p.p,total:S.qty[p.id]*p.p}});
+  if(!items.length){toast('En az bir ürün seçin',false);return}
+  var sub=items.reduce(function(s,i){return s+i.total},0);
+  var d=disc28(sub);
+  try{
+    await addDoc(collection(db,'orders'),{
+      items:items,subtotal:sub,discount:d,totalAmount:sub-d,
+      deliveryDate:S.ddate||tdy(),note:S.note,status:'pending',
+      createdBy:S.role,createdByName:S.role==='owner'?'Üretici':'Şahinci Market',
+      createdAt:serverTimestamp(),editRequest:null
+    });
+    toast('Sipariş oluşturuldu!');
+    S.qty={};S.note='';S.ddate=tdy();S.page='dashboard';render();
+  }catch(e){toast('Hata: '+e.message,false)}
+}
+
+async function changeStatus(id,s){
+  try{await updateDoc(doc(db,'orders',id),{status:s,lastModified:serverTimestamp()});toast('Durum güncellendi!')}
+  catch(e){toast('Hata',false)}
+}
+
+async function submitEdit(oid){
+  var items=P.filter(function(p){return(S.eqty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.eqty[p.id],price:p.p,total:S.eqty[p.id]*p.p}});
+  if(!items.length){toast('En az bir ürün olmalı',false);return}
+  var sub=items.reduce(function(s,i){return s+i.total},0);
+  var d=disc28(sub);
+  try{
+    await updateDoc(doc(db,'orders',oid),{
+      editRequest:{status:'pending',requestedBy:S.role,requestedByName:S.role==='owner'?'Üretici':'Şahinci Market',requestedAt:new Date().toISOString(),proposedItems:items,proposedSubtotal:sub,proposedDiscount:d,proposedTotal:sub-d,proposedDeliveryDate:S.edate}
+    });
+    toast('Düzenleme talebi gönderildi!');S.editing=false;render();
+  }catch(e){toast('Hata',false)}
+}
+
+async function approveEdit(oid){
+  var o=S.orders.find(function(x){return x.id===oid});if(!o||!o.editRequest)return;
+  var er=o.editRequest;
+  try{
+    await updateDoc(doc(db,'orders',oid),{
+      items:er.proposedItems,subtotal:er.proposedSubtotal,discount:er.proposedDiscount,
+      totalAmount:er.proposedTotal,deliveryDate:er.proposedDeliveryDate,
+      editRequest:Object.assign({},er,{status:'approved',approvedAt:new Date().toISOString()}),
+      lastModified:serverTimestamp()
+    });
+    toast('Düzenleme onaylandı!');
+  }catch(e){toast('Hata',false)}
+}
+
+async function rejectEdit(oid){
+  var o=S.orders.find(function(x){return x.id===oid});if(!o||!o.editRequest)return;
+  try{
+    await updateDoc(doc(db,'orders',oid),{editRequest:Object.assign({},o.editRequest,{status:'rejected',rejectedAt:new Date().toISOString()})});
+    toast('Düzenleme reddedildi');
+  }catch(e){toast('Hata',false)}
+}
+
+async function addPayment(){
+  var amt=parseFloat(S.pa);if(!amt||amt<=0){toast('Geçerli tutar girin',false);return}
+  try{
+    await addDoc(collection(db,'payments'),{amount:amt,date:S.pd||tdy(),note:S.pn,createdBy:S.role,createdByName:S.role==='owner'?'Üretici':'Şahinci Market',createdAt:serverTimestamp()});
+    toast('Ödeme kaydedildi!');S.pa='';S.pn='';render();
+  }catch(e){toast('Hata',false)}
+}
+
+async function delPayment(pid){
+  if(!confirm('Bu ödemeyi silmek istediğinize emin misiniz?'))return;
+  try{await deleteDoc(doc(db,'payments',pid));toast('Silindi')}catch(e){toast('Hata',false)}
+}
+window._dp=delPayment;
+
+/* ═══════════════ RENDER ═══════════════ */
+function render(){
+  var el=document.getElementById('app');el.innerHTML='';
+  if(S.page==='role'){el.appendChild(rRole());return}
+  el.appendChild(rNav());
+  var m=h('div','main fade');
+  if(S.page==='dashboard')m.appendChild(rDash());
+  else if(S.page==='neworder')m.appendChild(rNewOrder());
+  else if(S.page==='detail')m.appendChild(rDetail());
+  else if(S.page==='payments')m.appendChild(rPay());
+  el.appendChild(m);
+}
+
+/* ROLE SELECT */
+function rRole(){
+  var w=h('div','role-wrap');
+  var box=h('div','role-box fade');
+  box.innerHTML='<div class="role-t">EKO<span>MİNİ</span></div><div class="role-s">Sipariş Takip Sistemi</div>';
+  var b1=h('div','role-btn');
+  b1.innerHTML='<div class="role-btn-icon">🏭</div><div class="role-btn-t">Üretici</div><div class="role-btn-s">Sipariş yönet, ödeme kaydet</div>';
+  b1.onclick=function(){pickRole('owner')};
+  var b2=h('div','role-btn');
+  b2.innerHTML='<div class="role-btn-icon">🏪</div><div class="role-btn-t">Şahinci Market (Müşteri)</div><div class="role-btn-s">Sipariş ver, bakiye görüntüle</div>';
+  b2.onclick=function(){pickRole('customer')};
+  box.appendChild(b1);box.appendChild(b2);w.appendChild(box);return w;
+}
+
+/* NAV */
+function rNav(){
+  var nav=h('nav','nav');var inner=h('div','nav-in');
+  var brand=h('div','nav-brand','EKO<i>MİNİ</i>');
+  brand.onclick=function(){S.page='dashboard';S.editing=false;render()};
+  var right=h('div','nav-r');
+  if(S.page!=='dashboard'){var back=h('button','btn btn-s btn-sm','\u2190 Geri');back.onclick=function(){S.page='dashboard';S.editing=false;render()};right.appendChild(back)}
+  right.appendChild(h('span','rtag '+S.role,S.role==='owner'?'Üretici':'Müşteri'));
+  var sw=h('button','btn btn-s btn-sm','Değiştir');sw.onclick=switchRole;right.appendChild(sw);
+  inner.appendChild(brand);inner.appendChild(right);nav.appendChild(inner);return nav;
+}
+
+/* DASHBOARD */
+function rDash(){
+  var f=document.createDocumentFragment();
+  var t=tdy();
+  var totOrd=S.orders.filter(function(o){return o.status!=='cancelled'}).reduce(function(s,o){return s+(o.totalAmount||0)},0);
+  var totPaid=S.payments.reduce(function(s,p){return s+(p.amount||0)},0);
+  var bal=totOrd-totPaid;
+  var todayO=S.orders.filter(function(o){return o.deliveryDate===t&&o.status!=='cancelled'}).length;
+  var futO=S.orders.filter(function(o){return o.deliveryDate>t&&o.status!=='cancelled'}).length;
+  var pendE=S.orders.filter(function(o){return o.editRequest&&o.editRequest.status==='pending'&&o.editRequest.requestedBy!==S.role}).length;
+
+  var sh='<div class="stat"><div class="stat-l">Bakiye</div><div class="stat-v '+(bal>0?'neg':bal<0?'pos':'neu')+'">'+money(bal)+'</div></div>';
+  sh+='<div class="stat"><div class="stat-l">Bugün</div><div class="stat-v neu">'+todayO+'</div></div>';
+  sh+='<div class="stat"><div class="stat-l">İleri Tarih</div><div class="stat-v neu">'+futO+'</div></div>';
+  if(pendE>0)sh+='<div class="stat" style="border-color:rgba(251,191,36,.4)"><div class="stat-l">Onay Bekleyen</div><div class="stat-v" style="color:var(--warn)">'+pendE+'</div></div>';
+  f.appendChild(h('div','stats',sh));
+
+  var hdr=h('div','sec-h');hdr.innerHTML='<div class="sec-t">Siparişler</div>';
+  var btns=h('div','','');btns.style.display='flex';btns.style.gap='8px';
+  var nb=h('button','btn btn-p btn-sm','+ Sipariş');
+  nb.onclick=function(){S.page='neworder';S.qty={};S.note='';S.ddate=tdy();render()};
+  btns.appendChild(nb);
+  var pb=h('button','btn btn-s btn-sm','\uD83D\uDCB0 Ödeme');
+  pb.onclick=function(){S.page='payments';S.pd=tdy();render()};
+  btns.appendChild(pb);
+  hdr.appendChild(btns);f.appendChild(hdr);
+
+  var tabs=h('div','tabs');
+  var tabList=[['all','Tümü'],['pending','Bekleyen'],['approved','Onaylı'],['delivered','Teslim'],['cancelled','İptal']];
+  tabList.forEach(function(pair){
+    var tb=h('button','tab'+(S.tab===pair[0]?' on':''),pair[1]);
+    tb.onclick=function(){S.tab=pair[0];render()};tabs.appendChild(tb);
+  });
+  f.appendChild(tabs);
+
+  var filtered=S.tab==='all'?S.orders:S.orders.filter(function(o){return o.status===S.tab});
+  if(!filtered.length){f.appendChild(h('div','empty','<div class="empty-i">📋</div><div>Sipariş bulunamadı</div>'));return f}
+
+  var list=h('div','card');list.style.padding='0';
+  filtered.forEach(function(o){
+    var sm={pending:['Beklemede','b-pend'],approved:['Onaylandı','b-ok'],delivered:['Teslim','b-del'],cancelled:['İptal','b-can']};
+    var st=sm[o.status]||['?','b-pend'];
+    var dl=o.deliveryDate===t?'Bugün':o.deliveryDate>t?'İleri tarih':'Geçmiş';
+    var hasE=o.editRequest&&o.editRequest.status==='pending';
+    var row=h('div','orow');
+    row.innerHTML='<div class="orow-l"><div class="orow-date">'+fmtD(o.deliveryDate)+'</div><div class="orow-sub">'+dl+' \u00B7 '+(o.items?o.items.length:0)+' çeşit</div></div><div class="orow-r"><div class="orow-amt">'+money(o.totalAmount)+'</div><div class="mt-2"><span class="badge '+st[1]+'">'+st[0]+'</span>'+(hasE?'<span class="badge b-edit">Düzenleme</span>':'')+'</div></div><span style="color:var(--t3);margin-left:4px">\u203A</span>';
+    row.onclick=function(){S.oid=o.id;S.odata=o;S.page='detail';S.editing=false;render()};
+    list.appendChild(row);
+  });
+  f.appendChild(list);
+  return f;
+}
+
+/* NEW ORDER */
+function rNewOrder(){
+  var f=document.createDocumentFragment();
+  f.appendChild(h('div','sec-h','<div class="sec-t">Yeni Sipariş</div>'));
+  var top=h('div','card');
+  top.innerHTML='<div class="fg"><label class="fl">Teslimat Tarihi</label><input class="fi" type="date" id="nd" value="'+(S.ddate||tdy())+'"></div><div class="fg"><label class="fl">Not</label><input class="fi" type="text" id="nn" placeholder="Sipariş notu..." value="'+(S.note||'')+'"></div>';
+  f.appendChild(top);
+
+  var pc=h('div','card');pc.innerHTML='<div class="card-t">Ürünler</div>';
+  CATS.forEach(function(cat){
+    pc.appendChild(h('div','cat',cat));
+    P.filter(function(p){return p.c===cat}).forEach(function(p){
+      var q=S.qty[p.id]||0;
+      var row=h('div','prow'+(q>0?' on':''));
+      row.innerHTML='<span class="prow-n">'+p.n+'</span><span class="prow-p">'+money(p.p)+'</span>';
+      var inp=document.createElement('input');inp.type='number';inp.className='prow-q';inp.min='0';inp.placeholder='0';inp.value=q||'';
+      inp.dataset.pid=p.id;
+      inp.addEventListener('input',function(e){S.qty[p.id]=parseInt(e.target.value)||0;updateSumm()});
+      row.appendChild(inp);pc.appendChild(row);
+    });
+  });
+  f.appendChild(pc);
+  var sc=h('div','');sc.id='nsumm';f.appendChild(sc);
+  var sub=h('button','btn btn-p btn-full','Siparişi Oluştur');
+  sub.style.marginTop='12px';
+  sub.onclick=function(){
+    var nd=document.getElementById('nd');if(nd)S.ddate=nd.value;
+    var nn=document.getElementById('nn');if(nn)S.note=nn.value;
+    createOrder();
+  };
+  f.appendChild(sub);
+  setTimeout(updateSumm,10);
+  return f;
+}
+
+function updateSumm(){
+  var sc=document.getElementById('nsumm');if(!sc)return;
+  var items=P.filter(function(p){return(S.qty[p.id]||0)>0});
+  if(!items.length){sc.innerHTML='';return}
+  var html='<div class="summ">';
+  var sub=0;
+  items.forEach(function(p){var q=S.qty[p.id];var t=q*p.p;sub+=t;html+='<div class="srow"><span>'+p.n+' \u00D7 '+q+'</span><span>'+money(t)+'</span></div>'});
+  var d=disc28(sub);
+  html+='<div class="srow"><span>Ara Toplam</span><span>'+money(sub)+'</span></div>';
+  html+='<div class="srow"><span>İskonto (%28)</span><span style="color:var(--ok)">-'+money(d)+'</span></div>';
+  html+='<div class="srow tot"><span>Toplam</span><span class="amt">'+money(sub-d)+'</span></div></div>';
+  sc.innerHTML=html;
+}
+
+/* ORDER DETAIL */
+function rDetail(){
+  var o=S.odata;if(!o)return h('div','empty','Yükleniyor...');
+  var f=document.createDocumentFragment();
+  f.appendChild(h('div','sec-h','<div class="sec-t">Sipariş Detayı</div>'));
+
+  var hasEdit=o.editRequest&&o.editRequest.status==='pending';
+  var editMine=hasEdit&&o.editRequest.requestedBy===S.role;
+
+  // Edit banner
+  if(hasEdit){
+    var ban=h('div','ebanner');
+    var bh='<div class="eb-t">\u270F\uFE0F Düzenleme Talebi \u2014 '+o.editRequest.requestedByName+' ('+(o.editRequest.requestedBy==='owner'?'Üretici':'Müşteri')+')</div>';
+    bh+='<div class="txs">Yeni toplam: '+money(o.editRequest.proposedTotal)+' | Tarih: '+fmtD(o.editRequest.proposedDeliveryDate)+'</div>';
+    bh+='<details class="mt-2"><summary>Değişiklikleri göster</summary><div style="margin-top:8px">';
+    if(o.editRequest.proposedItems){o.editRequest.proposedItems.forEach(function(i){bh+='<div class="srow"><span>'+i.name+' \u00D7 '+i.qty+'</span><span>'+money(i.total)+'</span></div>'})}
+    bh+='<div class="srow tot"><span>Yeni Toplam</span><span class="amt">'+money(o.editRequest.proposedTotal)+'</span></div></div></details>';
+    ban.innerHTML=bh;
+    if(!editMine){
+      var acts=h('div','eb-acts');
+      var okb=h('button','btn btn-ok btn-sm','\u2713 Onayla');okb.onclick=function(){approveEdit(o.id)};
+      var nob=h('button','btn btn-no btn-sm','\u2715 Reddet');nob.onclick=function(){rejectEdit(o.id)};
+      acts.appendChild(okb);acts.appendChild(nob);ban.appendChild(acts);
+    }else{ban.appendChild(h('div','txs tmut mt-2','Talebiniz karşı tarafın onayını bekliyor...'))}
+    f.appendChild(ban);
+  }
+
+  if(!S.editing){
+    // Info
+    var sm={pending:['Beklemede','b-pend'],approved:['Onaylandı','b-ok'],delivered:['Teslim Edildi','b-del'],cancelled:['İptal','b-can']};
+    var st=sm[o.status]||['?','b-pend'];
+    var info=h('div','card');
+    info.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div><div class="txs tmut">TESLİMAT TARİHİ</div><div class="fw7">'+fmtDL(o.deliveryDate)+'</div></div><span class="badge '+st[1]+'">'+st[0]+'</span></div>'+(o.note?'<div class="tsm t2 mb-2">\uD83D\uDCDD '+o.note+'</div>':'')+'<div class="txs tmut">Oluşturan: '+o.createdByName+'</div>';
+    f.appendChild(info);
+
+    // Items table
+    var ic=h('div','card');
+    var th='<div class="card-t">Ürünler</div><table class="ditems"><thead><tr><th>Ürün</th><th>Adet</th><th>Birim</th><th style="text-align:right">Toplam</th></tr></thead><tbody>';
+    if(o.items){o.items.forEach(function(i){th+='<tr><td>'+i.name+'</td><td>'+i.qty+'</td><td>'+money(i.price)+'</td><td style="text-align:right" class="fw7">'+money(i.total)+'</td></tr>'})}
+    th+='</tbody></table>';
+    th+='<div class="summ" style="margin-top:8px"><div class="srow"><span>Ara Toplam</span><span>'+money(o.subtotal)+'</span></div>';
+    if(o.discount>0)th+='<div class="srow"><span>İskonto (%28)</span><span style="color:var(--ok)">-'+money(o.discount)+'</span></div>';
+    th+='<div class="srow tot"><span>Genel Toplam</span><span class="amt">'+money(o.totalAmount)+'</span></div></div>';
+    ic.innerHTML=th;f.appendChild(ic);
+
+    // Actions
+    var acts=h('div','');acts.style.display='flex';acts.style.gap='8px';acts.style.flexWrap='wrap';
+    if(!hasEdit&&o.status!=='cancelled'){
+      var eb=h('button','btn btn-s btn-sm','\u270F\uFE0F Düzenle');
+      eb.onclick=function(){
+        S.editing=true;S.eqty={};
+        if(o.items){o.items.forEach(function(i){S.eqty[i.pid]=i.qty})}
+        S.edate=o.deliveryDate;render();
+      };
+      acts.appendChild(eb);
+    }
+    if(S.role==='owner'&&o.status==='pending'){var ab=h('button','btn btn-ok btn-sm','\u2713 Onayla');ab.onclick=function(){changeStatus(o.id,'approved')};acts.appendChild(ab)}
+    if(S.role==='owner'&&o.status==='approved'){var db2=h('button','btn btn-p btn-sm','\uD83D\uDCE6 Teslim Edildi');db2.onclick=function(){changeStatus(o.id,'delivered')};acts.appendChild(db2)}
+    if(o.status!=='cancelled'&&o.status!=='delivered'){var cb=h('button','btn btn-no btn-sm','İptal Et');cb.onclick=function(){if(confirm('İptal etmek istediğinize emin misiniz?'))changeStatus(o.id,'cancelled')};acts.appendChild(cb)}
+    f.appendChild(acts);
+  }else{
+    // EDIT MODE
+    var ec=h('div','card');
+    var ehdr=h('div','');ehdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px';
+    var et=h('div','card-t','Siparişi Düzenle');et.style.margin='0';ehdr.appendChild(et);
+    var ccb=h('button','btn btn-s btn-sm','İptal');ccb.onclick=function(){S.editing=false;render()};ehdr.appendChild(ccb);
+    ec.appendChild(ehdr);
+    ec.innerHTML+='<div class="fg"><label class="fl">Teslimat Tarihi</label><input class="fi" type="date" id="edate" value="'+S.edate+'"></div>';
+
+    CATS.forEach(function(cat){
+      ec.appendChild(h('div','cat',cat));
+      P.filter(function(p){return p.c===cat}).forEach(function(p){
+        var q=S.eqty[p.id]||0;
+        var row=h('div','prow'+(q>0?' on':''));
+        row.innerHTML='<span class="prow-n">'+p.n+'</span><span class="prow-p">'+money(p.p)+'</span>';
+        var inp=document.createElement('input');inp.type='number';inp.className='prow-q';inp.min='0';inp.placeholder='0';inp.value=q||'';
+        inp.addEventListener('input',function(e){S.eqty[p.id]=parseInt(e.target.value)||0;updateEditSumm()});
+        row.appendChild(inp);ec.appendChild(row);
+      });
+    });
+    var esc=h('div','');esc.id='esumm';ec.appendChild(esc);
+    f.appendChild(ec);
+    var sb=h('button','btn btn-p btn-full','Düzenleme Talebi Gönder (Onay Gerekli)');
+    sb.style.marginTop='12px';
+    sb.onclick=function(){var ed=document.getElementById('edate');if(ed)S.edate=ed.value;submitEdit(o.id)};
+    f.appendChild(sb);
+    f.appendChild(h('div','txs tmut mt-2','Değişiklik karşı tarafın onayından sonra uygulanacaktır.'));
+    setTimeout(updateEditSumm,10);
+  }
+  return f;
+}
+
+function updateEditSumm(){
+  var sc=document.getElementById('esumm');if(!sc)return;
+  var items=P.filter(function(p){return(S.eqty[p.id]||0)>0});
+  if(!items.length){sc.innerHTML='';return}
+  var html='<div class="summ" style="margin-top:10px">';
+  var sub=0;
+  items.forEach(function(p){var q=S.eqty[p.id];var t=q*p.p;sub+=t;html+='<div class="srow"><span>'+p.n+' \u00D7 '+q+'</span><span>'+money(t)+'</span></div>'});
+  var d=disc28(sub);
+  html+='<div class="srow"><span>İskonto (%28)</span><span style="color:var(--ok)">-'+money(d)+'</span></div>';
+  html+='<div class="srow tot"><span>Toplam</span><span class="amt">'+money(sub-d)+'</span></div></div>';
+  sc.innerHTML=html;
+}
+
+/* PAYMENTS */
+function rPay(){
+  var f=document.createDocumentFragment();
+  var isO=S.role==='owner';
+  f.appendChild(h('div','sec-h','<div class="sec-t">Ödeme & Bakiye</div>'));
+  var totOrd=S.orders.filter(function(o){return o.status!=='cancelled'}).reduce(function(s,o){return s+(o.totalAmount||0)},0);
+  var totPaid=S.payments.reduce(function(s,p){return s+(p.amount||0)},0);
+  var bal=totOrd-totPaid;
+  var stats=h('div','stats');
+  stats.innerHTML='<div class="stat"><div class="stat-l">Sipariş Tutarı</div><div class="stat-v neu">'+money(totOrd)+'</div></div><div class="stat"><div class="stat-l">Ödenen</div><div class="stat-v pos">'+money(totPaid)+'</div></div><div class="stat" style="grid-column:1/-1;border-color:'+(bal>0?'rgba(248,113,113,.3)':'rgba(74,222,128,.3)')+'"><div class="stat-l">Kalan Bakiye</div><div class="stat-v '+(bal>0?'neg':'pos')+'">'+money(bal)+'</div></div>';
+  f.appendChild(stats);
+
+  if(isO){
+    var fc=h('div','card');
+    fc.innerHTML='<div class="card-t">Ödeme Ekle</div><div class="fg"><label class="fl">Tutar (\u20BA)</label><input class="fi" type="number" step="0.01" id="pa" placeholder="0.00" value="'+S.pa+'"></div><div style="display:flex;gap:8px"><div class="fg" style="flex:1"><label class="fl">Tarih</label><input class="fi" type="date" id="pd" value="'+(S.pd||tdy())+'"></div><div class="fg" style="flex:2"><label class="fl">Not</label><input class="fi" type="text" id="pn" placeholder="Açıklama..." value="'+(S.pn||'')+'"></div></div>';
+    var pb=h('button','btn btn-p btn-full','Kaydet');
+    pb.onclick=function(){S.pa=document.getElementById('pa').value;S.pd=document.getElementById('pd').value;S.pn=document.getElementById('pn').value;addPayment()};
+    fc.appendChild(pb);f.appendChild(fc);
+  }
+
+  var pc=h('div','card');pc.innerHTML='<div class="card-t">Ödeme Geçmişi</div>';
+  if(!S.payments.length){
+    pc.innerHTML+='<div class="empty"><div class="empty-i">\uD83D\uDCB0</div><div>Henüz ödeme yok</div></div>';
+  }else{
+    var tbl='<div style="overflow-x:auto"><table class="ptable"><thead><tr><th>Tarih</th><th>Tutar</th><th>Not</th>'+(isO?'<th></th>':'')+'</tr></thead><tbody>';
+    S.payments.forEach(function(p){
+      tbl+='<tr><td>'+fmtD(p.date)+'</td><td class="fw7" style="color:var(--ok)">'+money(p.amount)+'</td><td class="tmut">'+(p.note||'\u2014')+'</td>';
+      if(isO)tbl+='<td><button class="btn btn-no btn-sm" onclick="_dp(\''+p.id+'\')">Sil</button></td>';
+      tbl+='</tr>';
+    });
+    tbl+='</tbody></table></div>';
+    pc.innerHTML+=tbl;
+  }
+  f.appendChild(pc);
+  return f;
+}
+
+/* ═══════════════ INIT ═══════════════ */
+var saved=localStorage.getItem('eko-role');
+if(saved){S.role=saved;S.page='dashboard';startListeners()}
+render();
+</script>
+</body>
+</html>
