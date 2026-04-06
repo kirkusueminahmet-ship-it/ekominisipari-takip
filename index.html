@@ -526,7 +526,7 @@ function rDetail(){
 
     // Copy section (hidden by default)
     var cs=h('div','card');cs.id='copySection';cs.style.display='none';cs.style.marginTop='12px';
-    cs.innerHTML='<div class="card-t">\uD83D\uDCCB Siparişi Kopyala</div><div class="txs t2 mb-2">Aynı ürünlerle yeni tarihli sipariş oluşturur</div><div class="fg"><label class="fl">Yeni Teslimat Tarihi</label><input class="fi" type="date" id="copyDate" value="'+tdy()+'"></div><div class="fg"><label class="fl">Veya birden fazla gün seçin</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="copyDays"></div></div><div id="copySelected" class="txs tmut mb-2"></div><button class="btn btn-p btn-full" id="copyBtn">Kopyala ve Oluştur</button>';
+    cs.innerHTML='<div class="card-t">\uD83D\uDCCB Siparişi Kopyala</div><div class="txs t2 mb-2">Aynı ürünlerle yeni tarihli sipariş oluşturur</div><div class="fg"><label class="fl">Yeni Teslimat Tarihi</label><input class="fi" type="date" id="copyDate" value="'+tdy()+'"></div><div class="fg"><label class="fl">Veya birden fazla gün seçin</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="copyDays"></div></div><div id="copySelected" class="txs tmut mb-2"></div><div style="display:flex;gap:8px"><button class="btn btn-p" style="flex:1" id="copyBtn">Kopyala ve Oluştur</button><button class="btn btn-s" id="copyCancelBtn">İptal</button></div>';
     f.appendChild(cs);
 
     // Copy section handlers
@@ -555,6 +555,8 @@ function rDetail(){
         daysDiv.appendChild(dayBtn);
       }
       var copyBtn=document.getElementById('copyBtn');
+      var copyCancelBtn=document.getElementById('copyCancelBtn');
+      if(copyCancelBtn)copyCancelBtn.onclick=function(){document.getElementById('copySection').style.display='none'};
       if(copyBtn)copyBtn.onclick=async function(){
         var dates=selectedDates.length>0?selectedDates:[];
         var singleDate=document.getElementById('copyDate');
