@@ -511,10 +511,69 @@ function rDetail(){
       };
       acts.appendChild(eb);
     }
+    // Copy order button
+    var cpb=h('button','btn btn-s btn-sm','\uD83D\uDCCB Kopyala');
+    cpb.onclick=function(){
+      var copyDiv=document.getElementById('copySection');
+      if(copyDiv){copyDiv.style.display=copyDiv.style.display==='none'?'block':'none'}
+    };
+    acts.appendChild(cpb);
+
     if(S.role==='owner'&&o.status==='pending'){var ab=h('button','btn btn-ok btn-sm','\u2713 Onayla');ab.onclick=function(){changeStatus(o.id,'approved')};acts.appendChild(ab)}
     if(S.role==='owner'&&o.status==='approved'){var db2=h('button','btn btn-p btn-sm','\uD83D\uDCE6 Teslim Edildi');db2.onclick=function(){changeStatus(o.id,'delivered')};acts.appendChild(db2)}
     if(o.status!=='cancelled'&&o.status!=='delivered'){var cb=h('button','btn btn-no btn-sm','İptal Et');cb.onclick=function(){if(confirm('İptal etmek istediğinize emin misiniz?'))changeStatus(o.id,'cancelled')};acts.appendChild(cb)}
     f.appendChild(acts);
+
+    // Copy section (hidden by default)
+    var cs=h('div','card');cs.id='copySection';cs.style.display='none';cs.style.marginTop='12px';
+    cs.innerHTML='<div class="card-t">\uD83D\uDCCB Siparişi Kopyala</div><div class="txs t2 mb-2">Aynı ürünlerle yeni tarihli sipariş oluşturur</div><div class="fg"><label class="fl">Yeni Teslimat Tarihi</label><input class="fi" type="date" id="copyDate" value="'+tdy()+'"></div><div class="fg"><label class="fl">Veya birden fazla gün seçin</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="copyDays"></div></div><div id="copySelected" class="txs tmut mb-2"></div><button class="btn btn-p btn-full" id="copyBtn">Kopyala ve Oluştur</button>';
+    f.appendChild(cs);
+
+    // Copy section handlers
+    setTimeout(function(){
+      var daysDiv=document.getElementById('copyDays');
+      if(!daysDiv)return;
+      // Generate next 14 days as quick pick buttons
+      var dayNames=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+      var selectedDates=[];
+      for(var i=1;i<=14;i++){
+        var dt=new Date();dt.setDate(dt.getDate()+i);
+        var ds=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+        var dn=dayNames[dt.getDay()];
+        var dayBtn=document.createElement('button');
+        dayBtn.className='btn btn-s btn-sm';
+        dayBtn.textContent=dt.getDate()+' '+dn;
+        dayBtn.dataset.date=ds;
+        dayBtn.addEventListener('click',function(e){
+          var d=e.target.dataset.date;
+          var idx=selectedDates.indexOf(d);
+          if(idx>-1){selectedDates.splice(idx,1);e.target.style.borderColor='var(--brd)';e.target.style.background='var(--bg3)'}
+          else{selectedDates.push(d);e.target.style.borderColor='var(--acc)';e.target.style.background='var(--accd)'}
+          var sel=document.getElementById('copySelected');
+          if(sel)sel.textContent=selectedDates.length>0?selectedDates.length+' gün seçildi':'';
+        });
+        daysDiv.appendChild(dayBtn);
+      }
+      var copyBtn=document.getElementById('copyBtn');
+      if(copyBtn)copyBtn.onclick=async function(){
+        var dates=selectedDates.length>0?selectedDates:[];
+        var singleDate=document.getElementById('copyDate');
+        if(dates.length===0&&singleDate)dates=[singleDate.value];
+        if(dates.length===0){toast('Tarih seçin',false);return}
+        copyBtn.disabled=true;copyBtn.textContent='Kopyalanıyor...';
+        try{
+          for(var j=0;j<dates.length;j++){
+            await addDoc(collection(db,'orders'),{
+              items:o.items,subtotal:o.subtotal,discount:o.discount,totalAmount:o.totalAmount,
+              deliveryDate:dates[j],note:o.note||'',status:'pending',
+              createdBy:S.role,createdByName:S.role==='owner'?'Üretici':'Şahinci Market',
+              createdAt:serverTimestamp(),editRequest:null
+            });
+          }
+          toast(dates.length+' sipariş oluşturuldu!');S.page='dashboard';render();
+        }catch(e){toast('Hata',false);copyBtn.disabled=false;copyBtn.textContent='Kopyala ve Oluştur'}
+      };
+    },20);
   }else{
     // EDIT MODE
     var ec=h('div','card');
