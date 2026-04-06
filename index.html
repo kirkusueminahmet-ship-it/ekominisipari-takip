@@ -164,10 +164,12 @@ const P=[
 {id:'tahinli',n:'Tahinli',p:50,c:'Diğer'},
 {id:'kurabiye',n:'Kurabiye',p:25,c:'Diğer'},
 ];
-const CATS=[...new Set(P.map(x=>x.c))];
+var customProducts=[];
+function allProducts(){return P.concat(customProducts)}
+function allCats(){return[...new Set(allProducts().map(function(x){return x.c}))]}
 
 /* ─── STATE ─── */
-let S={page:'role',role:null,orders:[],payments:[],tab:'all',qty:{},ddate:'',note:'',oid:null,odata:null,editing:false,eqty:{},edate:'',pa:'',pd:'',pn:''};
+let S={page:'role',role:null,orders:[],payments:[],tab:'all',qty:{},ddate:'',note:'',oid:null,odata:null,editing:false,eqty:{},edate:'',pa:'',pd:'',pn:'',showAddProduct:false};
 let unsubs=[];
 
 /* ─── UTILS ─── */
@@ -197,11 +199,15 @@ function startListeners(){
     S.payments=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
     render();
   }));
+  unsubs.push(onSnapshot(collection(db,'products'),function(snap){
+    customProducts=snap.docs.map(function(d){return Object.assign({id:d.id,firebaseId:d.id},d.data())});
+    render();
+  }));
 }
 
 /* ─── ACTIONS ─── */
 async function createOrder(){
-  var items=P.filter(function(p){return(S.qty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.qty[p.id],price:p.p,total:S.qty[p.id]*p.p}});
+  var items=allProducts().filter(function(p){return(S.qty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.qty[p.id],price:p.p,total:S.qty[p.id]*p.p}});
   if(!items.length){toast('En az bir ürün seçin',false);return}
   var sub=items.reduce(function(s,i){return s+i.total},0);
   var d=disc28(sub);
@@ -223,7 +229,7 @@ async function changeStatus(id,s){
 }
 
 async function submitEdit(oid){
-  var items=P.filter(function(p){return(S.eqty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.eqty[p.id],price:p.p,total:S.eqty[p.id]*p.p}});
+  var items=allProducts().filter(function(p){return(S.eqty[p.id]||0)>0}).map(function(p){return{pid:p.id,name:p.n,qty:S.eqty[p.id],price:p.p,total:S.eqty[p.id]*p.p}});
   if(!items.length){toast('En az bir ürün olmalı',false);return}
   var sub=items.reduce(function(s,i){return s+i.total},0);
   var d=disc28(sub);
@@ -270,6 +276,21 @@ async function delPayment(pid){
   try{await deleteDoc(doc(db,'payments',pid));toast('Silindi')}catch(e){toast('Hata',false)}
 }
 window._dp=delPayment;
+
+async function addProduct(name,price,cat){
+  if(!name||!price||!cat){toast('Tüm alanları doldurun',false);return}
+  var id=name.toLowerCase().replace(/[^a-z0-9ğüşıöç]/g,'-').replace(/-+/g,'-');
+  try{
+    await addDoc(collection(db,'products'),{id:id,n:name,p:parseFloat(price),c:cat});
+    toast('Ürün eklendi!');S.showAddProduct=false;render();
+  }catch(e){toast('Hata',false)}
+}
+
+async function removeProduct(firebaseId){
+  if(!confirm('Bu ürünü silmek istediğinize emin misiniz?'))return;
+  try{await deleteDoc(doc(db,'products',firebaseId));toast('Ürün silindi')}catch(e){toast('Hata',false)}
+}
+window._rp=removeProduct;
 
 /* ═══════════════ RENDER ═══════════════ */
 function render(){
@@ -371,17 +392,30 @@ function rNewOrder(){
   top.innerHTML='<div class="fg"><label class="fl">Teslimat Tarihi</label><input class="fi" type="date" id="nd" value="'+(S.ddate||tdy())+'"></div><div class="fg"><label class="fl">Not</label><input class="fi" type="text" id="nn" placeholder="Sipariş notu..." value="'+(S.note||'')+'"></div>';
   f.appendChild(top);
 
-  var pc=h('div','card');pc.innerHTML='<div class="card-t">Ürünler</div>';
-  CATS.forEach(function(cat){
+  var pc=h('div','card');pc.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-t" style="margin:0">Ürünler</div><button class="btn btn-s btn-sm" id="addProdBtn">+ Ürün Ekle</button></div>';
+
+  // Add product form (hidden by default)
+  var apf=h('div','');apf.id='addProdForm';apf.style.display=S.showAddProduct?'block':'none';
+  apf.innerHTML='<div class="card" style="border-color:var(--brda);margin-bottom:12px"><div class="card-t">Yeni Ürün Ekle</div><div class="fg"><label class="fl">Ürün Adı</label><input class="fi" type="text" id="apName" placeholder="Örn: Peynirli Pide"></div><div class="fg"><label class="fl">Fiyat (\u20BA)</label><input class="fi" type="number" step="0.01" id="apPrice" placeholder="0.00"></div><div class="fg"><label class="fl">Kategori</label><select class="fi" id="apCat"><option value="">Seçin...</option></select></div><div class="fg"><label class="fl">Veya Yeni Kategori</label><input class="fi" type="text" id="apNewCat" placeholder="Yeni kategori adı..."></div><div style="display:flex;gap:8px"><button class="btn btn-p btn-sm" id="apSave">Kaydet</button><button class="btn btn-s btn-sm" id="apCancel">İptal</button></div></div>';
+  pc.appendChild(apf);
+
+  allCats().forEach(function(cat){
     pc.appendChild(h('div','cat',cat));
-    P.filter(function(p){return p.c===cat}).forEach(function(p){
+    allProducts().filter(function(p){return p.c===cat}).forEach(function(p){
       var q=S.qty[p.id]||0;
       var row=h('div','prow'+(q>0?' on':''));
       row.innerHTML='<span class="prow-n">'+p.n+'</span><span class="prow-p">'+money(p.p)+'</span>';
       var inp=document.createElement('input');inp.type='number';inp.className='prow-q';inp.min='0';inp.placeholder='0';inp.value=q||'';
       inp.dataset.pid=p.id;
       inp.addEventListener('input',function(e){S.qty[p.id]=parseInt(e.target.value)||0;updateSumm()});
-      row.appendChild(inp);pc.appendChild(row);
+      row.appendChild(inp);
+      // Delete button for custom products
+      if(p.firebaseId){
+        var del=document.createElement('button');del.className='btn btn-no btn-sm';del.textContent='\u2715';del.style.padding='4px 8px';del.style.minWidth='auto';
+        del.addEventListener('click',function(){removeProduct(p.firebaseId)});
+        row.appendChild(del);
+      }
+      pc.appendChild(row);
     });
   });
   f.appendChild(pc);
@@ -394,13 +428,22 @@ function rNewOrder(){
     createOrder();
   };
   f.appendChild(sub);
-  setTimeout(updateSumm,10);
+  setTimeout(function(){
+    updateSumm();
+    // Add product form handlers
+    var addBtn=document.getElementById('addProdBtn');
+    if(addBtn)addBtn.onclick=function(){S.showAddProduct=!S.showAddProduct;var frm=document.getElementById('addProdForm');if(frm)frm.style.display=S.showAddProduct?'block':'none';if(S.showAddProduct){var sel=document.getElementById('apCat');if(sel){sel.innerHTML='<option value="">Seçin...</option>';allCats().forEach(function(c){sel.innerHTML+='<option value="'+c+'">'+c+'</option>'})}}};
+    var saveBtn=document.getElementById('apSave');
+    if(saveBtn)saveBtn.onclick=function(){var name=document.getElementById('apName').value.trim();var price=document.getElementById('apPrice').value;var cat=document.getElementById('apNewCat').value.trim()||document.getElementById('apCat').value;addProduct(name,price,cat)};
+    var cancelBtn=document.getElementById('apCancel');
+    if(cancelBtn)cancelBtn.onclick=function(){S.showAddProduct=false;var frm=document.getElementById('addProdForm');if(frm)frm.style.display='none'};
+  },10);
   return f;
 }
 
 function updateSumm(){
   var sc=document.getElementById('nsumm');if(!sc)return;
-  var items=P.filter(function(p){return(S.qty[p.id]||0)>0});
+  var items=allProducts().filter(function(p){return(S.qty[p.id]||0)>0});
   if(!items.length){sc.innerHTML='';return}
   var html='<div class="summ">';
   var sub=0;
@@ -481,9 +524,9 @@ function rDetail(){
     ec.appendChild(ehdr);
     ec.innerHTML+='<div class="fg"><label class="fl">Teslimat Tarihi</label><input class="fi" type="date" id="edate" value="'+S.edate+'"></div>';
 
-    CATS.forEach(function(cat){
+    allCats().forEach(function(cat){
       ec.appendChild(h('div','cat',cat));
-      P.filter(function(p){return p.c===cat}).forEach(function(p){
+      allProducts().filter(function(p){return p.c===cat}).forEach(function(p){
         var q=S.eqty[p.id]||0;
         var row=h('div','prow'+(q>0?' on':''));
         row.innerHTML='<span class="prow-n">'+p.n+'</span><span class="prow-p">'+money(p.p)+'</span>';
@@ -506,7 +549,7 @@ function rDetail(){
 
 function updateEditSumm(){
   var sc=document.getElementById('esumm');if(!sc)return;
-  var items=P.filter(function(p){return(S.eqty[p.id]||0)>0});
+  var items=allProducts().filter(function(p){return(S.eqty[p.id]||0)>0});
   if(!items.length){sc.innerHTML='';return}
   var html='<div class="summ" style="margin-top:10px">';
   var sub=0;
