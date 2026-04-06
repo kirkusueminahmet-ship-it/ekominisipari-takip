@@ -392,7 +392,7 @@ function rNewOrder(){
   top.innerHTML='<div class="fg"><label class="fl">Teslimat Tarihi</label><input class="fi" type="date" id="nd" value="'+(S.ddate||tdy())+'"></div><div class="fg"><label class="fl">Not</label><input class="fi" type="text" id="nn" placeholder="Sipariş notu..." value="'+(S.note||'')+'"></div>';
   f.appendChild(top);
 
-  var pc=h('div','card');pc.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-t" style="margin:0">Ürünler</div><button class="btn btn-s btn-sm" id="addProdBtn">+ Ürün Ekle</button></div>';
+  var pc=h('div','card');pc.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-t" style="margin:0">Ürünler</div>'+(S.role==='owner'?'<button class="btn btn-s btn-sm" id="addProdBtn">+ Ürün Ekle</button>':'')+'</div>';
 
   // Add product form (hidden by default)
   var apf=h('div','');apf.id='addProdForm';apf.style.display=S.showAddProduct?'block':'none';
@@ -410,7 +410,7 @@ function rNewOrder(){
       inp.addEventListener('input',function(e){S.qty[p.id]=parseInt(e.target.value)||0;updateSumm()});
       row.appendChild(inp);
       // Delete button for custom products
-      if(p.firebaseId){
+      if(p.firebaseId&&S.role==='owner'){
         var del=document.createElement('button');del.className='btn btn-no btn-sm';del.textContent='\u2715';del.style.padding='4px 8px';del.style.minWidth='auto';
         del.addEventListener('click',function(){removeProduct(p.firebaseId)});
         row.appendChild(del);
